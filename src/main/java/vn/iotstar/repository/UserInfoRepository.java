@@ -9,5 +9,5 @@ import vn.iotstar.entity.UserInfo;
 
 @Repository
 public interface UserInfoRepository extends JpaRepository<UserInfo, Integer>{
-	Optional <UserInfo> findbyName (String username);
+	Optional <UserInfo> findByName (String username);
 }

@@ -1,6 +1,10 @@
 package vn.iotstar;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
@@ -11,47 +15,77 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
+import vn.iotstar.repository.UserInfoRepository;
+import vn.iotstar.services.UserInfoService;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
- 
+	@Autowired
+	UserInfoRepository repository;
+	
 	@Bean
-    public UserDetailsService userDetailsService(PasswordEncoder encoder) {
-        UserDetails admin = User.withUsername("quynhthu")
-            .password(encoder.encode("123"))
-            .roles("ADMIN")
-            .build();
-
-        UserDetails user = User.withUsername("user")
-            .password(encoder.encode("123"))
-            .roles("USER")
-            .build();
-
-        return new InMemoryUserDetailsManager(admin, user);
-    }
-
+	UserDetailsService userDetailsService() {
+		return new UserInfoService(repository);
+	}
+	
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
+    
+    @Bean 
+    AuthenticationProvider authenticationProvider() {
+    	DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+    	authenticationProvider.setUserDetailsService(userDetailsService());
+    	authenticationProvider.setPasswordEncoder(passwordEncoder());
+    	return authenticationProvider;
+    }
+    
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/hello").permitAll() // Không yêu cầu đăng nhập
-                .requestMatchers("/customer/all").hasRole("ADMIN") // Chỉ ADMIN được truy cập
-                .requestMatchers("/customer/*").hasRole("USER") // Chỉ USER được truy cập
-                .anyRequest().authenticated() // Các endpoint khác yêu cầu đăng nhập
+                .requestMatchers("/user/new").permitAll() 
+                .requestMatchers("/").permitAll()
+                .requestMatchers("/hello").permitAll()  // Cho phép tất cả người dùng truy cập /hello
+                .requestMatchers("/customer/**").authenticated()
             )
             .formLogin(form -> form
-                .defaultSuccessUrl("/hello", true) // Sau khi login chuyển tới /hello
-                .permitAll()
-            )
-            .exceptionHandling(ex -> ex
-                .accessDeniedPage("/error") // Trang lỗi cho 403
+                .defaultSuccessUrl("/hello", true)  // Redirect về /hello sau khi login thành công
             )
             .build();
     }
+
+    
+    
+    
+ 
+//	@Bean
+//    public UserDetailsService userDetailsService(PasswordEncoder encoder) {
+//        UserDetails admin = User.withUsername("quynhthu")
+//            .password(encoder.encode("123"))
+//            .roles("ADMIN")
+//            .build();
+//
+//        UserDetails user = User.withUsername("user")
+//            .password(encoder.encode("123"))
+//            .roles("USER")
+//            .build();
+//
+//        return new InMemoryUserDetailsManager(admin, user);
+//    }
+
+
+
+//    @Bean
+//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+//        return http.csrf(csrf -> csrf.disable())
+//            .authorizeHttpRequests(auth -> auth
+//                .requestMatchers("/").permitAll()
+//                .requestMatchers("/customer/*").authenticated() 
+//            )
+//            .formLogin(Customizer.withDefaults())
+//            .build();
+//    }
 }
