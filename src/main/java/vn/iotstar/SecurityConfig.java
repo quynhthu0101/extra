@@ -16,39 +16,42 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
  
-    @Bean
+	@Bean
     public UserDetailsService userDetailsService(PasswordEncoder encoder) {
-        UserDetails admin = User.withUsername("trung")
-                .password(encoder.encode("123")) 
-                .roles("ADMIN") 
-                .build();
+        UserDetails admin = User.withUsername("quynhthu")
+            .password(encoder.encode("123"))
+            .roles("ADMIN")
+            .build();
 
         UserDetails user = User.withUsername("user")
-                .password(encoder.encode("123")) 
-                .roles("USER") 
-                .build();
+            .password(encoder.encode("123"))
+            .roles("USER")
+            .build();
 
-        
         return new InMemoryUserDetailsManager(admin, user);
     }
 
-    
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(csrf -> csrf.disable()) // Vô hiệu hóa CSRF (nếu không cần thiết)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/").permitAll() // Cho phép tất cả truy cập vào "/"
-                        .requestMatchers("/customer/**").authenticated() // Yêu cầu authentication cho "/customer/**"
-                        //.anyRequest().authenticated() // Yêu cầu authentication cho các request khác (nếu cần)
-                )
-                .formLogin(form -> form.loginPage("/login").permitAll()) // Sử dụng form login mặc định của Spring
-                .build();
+        return http.csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/hello").permitAll() // Không yêu cầu đăng nhập
+                .requestMatchers("/customer/all").hasRole("ADMIN") // Chỉ ADMIN được truy cập
+                .requestMatchers("/customer/*").hasRole("USER") // Chỉ USER được truy cập
+                .anyRequest().authenticated() // Các endpoint khác yêu cầu đăng nhập
+            )
+            .formLogin(form -> form
+                .defaultSuccessUrl("/hello", true) // Sau khi login chuyển tới /hello
+                .permitAll()
+            )
+            .exceptionHandling(ex -> ex
+                .accessDeniedPage("/error") // Trang lỗi cho 403
+            )
+            .build();
     }
-    
 }

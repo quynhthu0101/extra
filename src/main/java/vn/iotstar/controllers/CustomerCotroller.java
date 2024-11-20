@@ -14,43 +14,31 @@ import vn.iotstar.models.Customer;
 @RestController
 @EnableMethodSecurity
 public class CustomerCotroller {
-	private final List<Customer> customers = List.of(
-            Customer.builder()
-                    .id("001")
-                    .name("Nguyễn Hữu Trung")
-                    .email("trungnhspkt@gmail.com")
-                    .phoneNumber("0123456789")
-                    .build(),
-            Customer.builder()
-                    .id("002")
-                    .name("Hữu Trung")
-                    .email("trunghuu@gmail.com")
-                    .phoneNumber("0987654321")
-                    .build()
-    );
-			
-	@GetMapping("/hello")
-	public ResponseEntity<String> hello(){
-		return ResponseEntity.ok("Hello is Guest");
-	}
-	
-	@GetMapping("/customer/all")
-	@PreAuthorize("hasAuthority('ROLE_ADMIN')")
-	public ResponseEntity<List<Customer>> getCustomerList(){
-		List<Customer> list = this.customers;
-		return ResponseEntity.ok(list);
-		
-	}
-	
-	@GetMapping("/customer/{id}")
-    @PreAuthorize("hasAuthority('ROLE_USER')")
-    public ResponseEntity<Customer> getCustomerById(@PathVariable("id") String id) {
-        return customers.stream()
-                .filter(customer -> customer.getId().equals(id))
-                .findFirst()
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-	
+	final private List<Customer> customers = List.of(
+	        Customer.builder().id("001").name("Phạm Quỳnh Thư").email("quynhthuspkt@gmail.com").build(),
+	        Customer.builder().id("002").name("Quỳnh Thư").email("quynhthu@gmail.com").build()
+	    );
+
+	    @GetMapping("/hello")
+	    public ResponseEntity<String> hello() {
+	        return ResponseEntity.ok("Hello is Guest");
+	    }
+
+	    @GetMapping("/customer/all")
+	    @PreAuthorize("hasRole('ADMIN')") // Chỉ ADMIN được truy cập
+	    public ResponseEntity<List<Customer>> getCustomerList() {
+	        return ResponseEntity.ok(this.customers);
+	    }
+
+	    @GetMapping("/customer/{id}")
+	    @PreAuthorize("hasRole('USER')") // Chỉ USER được truy cập
+	    public ResponseEntity<Customer> getCustomerById(@PathVariable String id) {
+	        return ResponseEntity.ok(
+	            this.customers.stream()
+	                .filter(customer -> customer.getId().equals(id))
+	                .findFirst()
+	                .orElse(null)
+	        );
+	    }
 				
 }
